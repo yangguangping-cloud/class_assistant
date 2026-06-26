@@ -1,30 +1,30 @@
 -- Database initialization script for class_assistant
 
 -- Drop tables if they exist
-DROP TABLE IF EXISTS student_tags CASCADE;
-DROP TABLE IF EXISTS schedules CASCADE;
-DROP TABLE IF EXISTS scores CASCADE;
-DROP TABLE IF EXISTS students CASCADE;
-DROP TABLE IF EXISTS tags CASCADE;
-DROP TABLE IF EXISTS classes CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
-DROP TABLE IF EXISTS subjects CASCADE;
-DROP TABLE IF EXISTS grades CASCADE;
+-- DROP TABLE IF EXISTS student_tags CASCADE;
+-- DROP TABLE IF EXISTS schedules CASCADE;
+-- DROP TABLE IF EXISTS scores CASCADE;
+-- DROP TABLE IF EXISTS students CASCADE;
+-- DROP TABLE IF EXISTS tags CASCADE;
+-- DROP TABLE IF EXISTS classes CASCADE;
+-- DROP TABLE IF EXISTS users CASCADE;
+-- DROP TABLE IF EXISTS subjects CASCADE;
+-- DROP TABLE IF EXISTS grades CASCADE;
 
 -- Create tables
-CREATE TABLE grades (
+CREATE TABLE IF NOT EXISTS grades (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE subjects (
+CREATE TABLE IF NOT EXISTS subjects (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE classes (
+CREATE TABLE IF NOT EXISTS classes (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     display_name VARCHAR(100),
@@ -44,35 +44,34 @@ CREATE TABLE classes (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE students (
+CREATE TABLE IF NOT EXISTS students (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     gender VARCHAR(10) NOT NULL,
+    birthday DATE NOT NULL,
     age INTEGER,
     height FLOAT,
     weight FLOAT,
     hobbies TEXT,
     friends TEXT,
     class_id INTEGER NOT NULL REFERENCES classes(id),
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    active BOOLEAN NOT NULL DEFAULT true
 );
 
-ALTER TABLE public.students ADD birthday date NULL;
-ALTER TABLE public.students ADD active boolean NULL DEFAULT true;
-
-CREATE TABLE tags (
+CREATE TABLE IF NOT EXISTS tags (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE student_tags (
+CREATE TABLE IF NOT EXISTS student_tags (
     id SERIAL PRIMARY KEY,
     student_id INTEGER NOT NULL REFERENCES students(id),
     tag_id INTEGER NOT NULL REFERENCES tags(id)
 );
 
-CREATE TABLE scores (
+CREATE TABLE IF NOT EXISTS scores (
     id SERIAL PRIMARY KEY,
     student_id INTEGER NOT NULL REFERENCES students(id),
     class_id INTEGER NOT NULL REFERENCES classes(id),
@@ -83,7 +82,7 @@ CREATE TABLE scores (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE schedules (
+CREATE TABLE IF NOT EXISTS schedules (
     id SERIAL PRIMARY KEY,
     class_id INTEGER NOT NULL REFERENCES classes(id),
     teacher_id INTEGER NOT NULL REFERENCES users(id),
@@ -104,7 +103,7 @@ ON CONFLICT (name) DO NOTHING;
 
 -- Grades
 INSERT INTO grades (name) VALUES
-('一年级'), ('二年级'), ('三年级')
+('一年级'), ('二年级'), ('三年级'), ('四年级'), ('五年级'), ('六年级')
 ON CONFLICT (name) DO NOTHING;
 
 -- Create a default teacher (password: 123456, hashed with bcrypt)
@@ -120,18 +119,18 @@ SELECT '一班', (SELECT id FROM grades WHERE name = '一年级'), (SELECT id FR
 WHERE NOT EXISTS (SELECT 1 FROM classes WHERE name = '一班');
 
 -- Create some sample students
-INSERT INTO students (name, gender, age, height, weight, hobbies, friends, class_id)
-SELECT name, gender, age, height, weight, hobbies, friends, (SELECT id FROM classes WHERE name = '一班')
+INSERT INTO students (name, gender, birthday, age, height, weight, hobbies, friends, class_id)
+SELECT name, gender, birthday, age, height, weight, hobbies, friends, (SELECT id FROM classes WHERE name = '一班')
 FROM (VALUES
-    ('小明', '男', 10, 140.5, 35.2, '篮球,游泳', '小红,小刚', 1),
-    ('小红', '女', 10, 138.2, 32.5, '绘画,音乐', '小明,小丽', 1),
-    ('小刚', '男', 11, 142.8, 38.0, '足球,跑步', '小明,小强', 1),
-    ('小丽', '女', 10, 136.5, 30.8, '舞蹈,阅读', '小红,小美', 1),
-    ('小强', '男', 11, 145.0, 40.5, '篮球,游戏', '小刚,小伟', 1),
-    ('小美', '女', 10, 137.8, 31.2, '唱歌,绘画', '小丽,小红', 1),
-    ('小伟', '男', 11, 143.5, 39.0, '跑步,游泳', '小强,小明', 1),
-    ('小芳', '女', 10, 139.0, 33.5, '阅读,写作', '小红,小丽', 1)
-) AS t(name, gender, age, height, weight, hobbies, friends, class_id)
+  ('小明', '男', DATE '2016-01-01', 10, 140.5, 35.2, '篮球,游泳', '小红,小刚', 1),
+  ('小红', '女', DATE '2016-01-01', 10, 138.2, 32.5, '绘画,音乐', '小明,小丽', 1),
+  ('小刚', '男', DATE '2016-01-01', 11, 142.8, 38.0, '足球,跑步', '小明,小强', 1),
+  ('小丽', '女', DATE '2016-01-01', 10, 136.5, 30.8, '舞蹈,阅读', '小红,小美', 1),
+  ('小强', '男', DATE '2016-01-01', 11, 145.0, 40.5, '篮球,游戏', '小刚,小伟', 1),
+  ('小美', '女', DATE '2016-01-01', 10, 137.8, 31.2, '唱歌,绘画', '小丽,小红', 1),
+  ('小伟', '男', DATE '2016-01-01', 11, 143.5, 39.0, '跑步,游泳', '小强,小明', 1),
+  ('小芳', '女', DATE '2016-01-01', 10, 139.0, 33.5, '阅读,写作', '小红,小丽', 1)
+) AS t(name, gender, birthday, age, height, weight, hobbies, friends, class_id)
 WHERE NOT EXISTS (SELECT 1 FROM students LIMIT 1);
 
 -- Create tags
@@ -141,7 +140,7 @@ ON CONFLICT (name) DO NOTHING;
 
 -- Create sample schedule
 INSERT INTO schedules (class_id, teacher_id, subject_id, day_of_week, time_slot, start_time, end_time)
-SELECT 
+SELECT
     (SELECT id FROM classes WHERE name = '一班'),
     (SELECT id FROM users WHERE username = 'teacher1'),
     (SELECT id FROM subjects WHERE name = '英语'),
